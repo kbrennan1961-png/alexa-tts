@@ -1,0 +1,14 @@
+[project]
+name = "alexa-tts"
+version = "0.1.0"
+description = "TTS announcements on Amazon Echo devices (unofficial)"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["alexapy>=1.30"]
+
+[project.scripts]
+alexa-tts = "alexa_tts.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
