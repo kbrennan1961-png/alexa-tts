@@ -19,7 +19,7 @@ def _save_config(cfg):
     CONFIG_FILE.write_text(json.dumps(cfg, indent=2))
 
 
-def login_interactive(email, password, url_base="https://www.amazon.com", port=8099):
+def login_interactive(email, password, url_base="https://www.amazon.com", port=8099, timeout=300):
     """Run the proxy login. User must open the printed URL in a browser."""
     async def main():
         from alexapy.alexalogin import AlexaLogin
@@ -35,8 +35,16 @@ def login_interactive(email, password, url_base="https://www.amazon.com", port=8
             oauth_login=True,
         )
         proxy = AlexaProxy(login, f"http://localhost:{port}")
-        print(f"Open http://localhost:{port} in your browser and complete Amazon login.")
-        await proxy.run()
+        await proxy.start_proxy(host="0.0.0.0")
+        print(f"Open http://127.0.0.1:{port} (or your LAN IP) in your browser and complete Amazon login.")
+        print("Waiting for login to complete...")
+        deadline = asyncio.get_event_loop().time() + timeout
+        while asyncio.get_event_loop().time() < deadline:
+            if getattr(login, "access_token", None) or getattr(login, "authorization_code", None):
+                break
+            await asyncio.sleep(2)
+        await login.save_cookiefile()
+        await proxy.stop_proxy()
         cfg = _load_config()
         cfg["email"] = email
         cfg["logged_in"] = True
