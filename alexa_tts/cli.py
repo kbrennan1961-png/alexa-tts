@@ -15,12 +15,13 @@ def main():
     p.add_argument("--email", default=None)
     p.add_argument("--password", default=None)
     p.add_argument("--port", type=int, default=8099)
+    p.add_argument("--host", default=None, help="host/IP for the proxy (default: auto-detect LAN IP)")
     args = p.parse_args()
 
     if args.login:
         email = args.email or input("Amazon email: ")
         password = args.password or getpass.getpass("Amazon password: ")
-        login_interactive(email, password, port=args.port)
+        login_interactive(email, password, port=args.port, host=args.host)
         return
 
     if args.list:

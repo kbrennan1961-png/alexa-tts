@@ -19,8 +19,18 @@ def _save_config(cfg):
     CONFIG_FILE.write_text(json.dumps(cfg, indent=2))
 
 
-def login_interactive(email, password, url_base="https://www.amazon.com", port=8099, timeout=600):
+def login_interactive(email, password, url_base="https://www.amazon.com", port=8099, host=None, timeout=600):
     """Run the proxy login. User must open the printed URL in a browser."""
+    if host is None:
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(("8.8.8.8", 80))
+            host = s.getsockname()[0]
+        except Exception:
+            host = "127.0.0.1"
+        finally:
+            s.close()
     async def main():
         from alexapy.alexalogin import AlexaLogin
         from alexapy.alexaproxy import AlexaProxy
@@ -34,7 +44,7 @@ def login_interactive(email, password, url_base="https://www.amazon.com", port=8
             outputpath=lambda name: os.path.join(outdir, name),
             oauth_login=True,
         )
-        proxy = AlexaProxy(login, f"http://localhost:{port}")
+        proxy = AlexaProxy(login, f"http://{host}:{port}")
         # Wrap the success test to set a flag when it triggers.
         _orig_test = proxy.test_amazon_url
         async def _patched_test(resp, data, query):
@@ -44,7 +54,7 @@ def login_interactive(email, password, url_base="https://www.amazon.com", port=8
             return result
         proxy.test_amazon_url = _patched_test
         await proxy.start_proxy(host="0.0.0.0")
-        print(f"Open http://127.0.0.1:{port} (or your LAN IP) in your browser and complete Amazon login.")
+        print(f"Open http://{host}:{port} in your browser and complete Amazon login.")
         print("Waiting for login to complete (up to 10 min)...")
         deadline = asyncio.get_event_loop().time() + timeout
         last_url = None
